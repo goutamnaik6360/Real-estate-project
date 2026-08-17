@@ -33,7 +33,7 @@ export default function App() {
 
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={<Landing />} />
+        <Route path="/" element={<Home />} />
         <Route path="/home" element={<Home />} />
         <Route path="/services" element={<Services />} />
         <Route path="/service/:id" element={<ServiceDetails />} />
