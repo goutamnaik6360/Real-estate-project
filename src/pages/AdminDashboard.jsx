@@ -40,9 +40,10 @@ export default function AdminDashboard() {
       setLoading(true);
 
       const agents = await pb.collection("users").getFullList({
-        filter: 'role="agent" && status="pending"',
-        sort: "-created",
-      });
+  filter: 'role="agent" && status="pending"',
+  sort: "-created",
+  requestKey: null,
+});
 
       const requests = await pb.collection("requests").getFullList({
         filter: 'status="admin_review"',
