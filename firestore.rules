@@ -1,0 +1,191 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function profilePath(uid) {
+      return /databases/$(database)/documents/profiles/$(uid);
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && exists(profilePath(request.auth.uid))
+        && get(profilePath(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isApprovedAgent() {
+      return signedIn()
+        && exists(profilePath(request.auth.uid))
+        && get(profilePath(request.auth.uid)).data.role == 'agent'
+        && get(profilePath(request.auth.uid)).data.status == 'approved';
+    }
+
+    function boundedString(data, field, maxLength) {
+      return data[field] is string && data[field].size() <= maxLength;
+    }
+
+    function validProfile(data) {
+      return data.keys().hasOnly([
+          'id', 'name', 'email', 'role', 'status', 'phone', 'aadhaar',
+          'location', 'experience', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasAll([
+          'id', 'name', 'email', 'role', 'status', 'phone', 'aadhaar',
+          'location', 'experience', 'createdAt'
+        ])
+        && data.id is string && data.id.size() <= 128
+        && boundedString(data, 'name', 120)
+        && data.email is string && data.email.size() <= 254
+        && data.role in ['user', 'agent', 'admin']
+        && data.status in ['approved', 'pending', 'rejected']
+        && boundedString(data, 'phone', 32)
+        && boundedString(data, 'aadhaar', 32)
+        && boundedString(data, 'location', 120)
+        && boundedString(data, 'experience', 80)
+        && data.createdAt is timestamp
+        && (!('updatedAt' in data) || data.updatedAt is timestamp);
+    }
+
+    function validRequest(data) {
+      return data.keys().hasOnly([
+          'user', 'userId', 'serviceName', 'applicantName', 'location',
+          'phone', 'details', 'status', 'progress', 'assignedAgent',
+          'createdAt', 'created', 'updatedAt'
+        ])
+        && data.keys().hasAll([
+          'user', 'userId', 'serviceName', 'applicantName', 'location',
+          'phone', 'details', 'status', 'progress', 'assignedAgent',
+          'createdAt', 'created'
+        ])
+        && data.user is string && data.user.size() <= 128
+        && data.userId is string && data.userId.size() <= 128
+        && boundedString(data, 'serviceName', 160)
+        && boundedString(data, 'applicantName', 120)
+        && boundedString(data, 'location', 200)
+        && boundedString(data, 'phone', 32)
+        && boundedString(data, 'details', 500)
+        && data.status in ['admin_review', 'pending_agent', 'in_progress', 'completed']
+        && boundedString(data, 'progress', 120)
+        && boundedString(data, 'assignedAgent', 128)
+        && data.createdAt is timestamp
+        && boundedString(data, 'created', 40)
+        && (!('updatedAt' in data) || data.updatedAt is timestamp);
+    }
+
+    function validSupportTicket(data) {
+      return data.keys().hasOnly([
+          'name', 'email', 'subject', 'message', 'userId', 'createdAt', 'created'
+        ])
+        && data.keys().hasAll([
+          'name', 'email', 'subject', 'message', 'userId', 'createdAt', 'created'
+        ])
+        && boundedString(data, 'name', 120)
+        && data.email is string && data.email.size() <= 254
+        && boundedString(data, 'subject', 180)
+        && boundedString(data, 'message', 5000)
+        && (data.userId == null || (data.userId is string && data.userId.size() <= 128))
+        && data.createdAt is timestamp
+        && boundedString(data, 'created', 40);
+    }
+
+    // Profiles are private. Public signup cannot assign the admin role.
+    match /profiles/{uid} {
+      allow create: if isSelf(uid)
+        && validProfile(request.resource.data)
+        && request.resource.data.id == uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.role in ['user', 'agent']
+        && ((request.resource.data.role == 'agent' && request.resource.data.status == 'pending')
+          || (request.resource.data.role == 'user' && request.resource.data.status == 'approved'))
+        && request.resource.data.createdAt == request.time;
+      allow get: if isSelf(uid)
+        || (isAdmin() && resource.data.role == 'agent' && resource.data.status == 'pending');
+      allow list: if isAdmin()
+        && resource.data.role == 'agent'
+        && resource.data.status == 'pending';
+      allow update: if isAdmin()
+        && validProfile(request.resource.data)
+        && request.resource.data.id == resource.data.id
+        && request.resource.data.createdAt == resource.data.createdAt
+        && resource.data.role == 'agent'
+        && resource.data.status == 'pending'
+        && request.resource.data.role == 'agent'
+        && request.resource.data.status in ['approved', 'rejected']
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
+        && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt == request.time);
+      allow delete: if false;
+    }
+
+    // Users see their own requests; approved agents see unassigned work and their jobs.
+    match /requests/{requestId} {
+      allow create: if signedIn()
+        && validRequest(request.resource.data)
+        && request.resource.data.user == request.auth.uid
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'admin_review'
+        && request.resource.data.progress == 'Pending Admin Review'
+        && request.resource.data.assignedAgent == ''
+        && request.resource.data.createdAt == request.time;
+      allow get, list: if (signedIn() && resource.data.user == request.auth.uid)
+        || (isApprovedAgent() && resource.data.status == 'pending_agent')
+        || (isApprovedAgent() && resource.data.assignedAgent == request.auth.uid);
+      allow update: if isApprovedAgent()
+          && validRequest(request.resource.data)
+          && request.resource.data.user == resource.data.user
+          && request.resource.data.userId == resource.data.userId
+          && request.resource.data.createdAt == resource.data.createdAt
+          && ((resource.data.status == 'pending_agent'
+              && request.resource.data.status == 'in_progress'
+              && request.resource.data.assignedAgent == request.auth.uid
+              && request.resource.data.progress == 'Agent Assigned - Reviewing Documents'
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'progress', 'assignedAgent', 'updatedAt']))
+            || (resource.data.assignedAgent == request.auth.uid
+              && resource.data.status == 'in_progress'
+              && request.resource.data.assignedAgent == request.auth.uid
+              && request.resource.data.status in ['in_progress', 'completed']
+              && request.resource.data.progress in [
+                'Agent Assigned - Reviewing Documents',
+                'Documents Verified - Preparing File',
+                'Visiting Sub-Registrar Office',
+                'Waiting for Government Signature',
+                'Completed - Documents Ready'
+              ]
+              && (request.resource.data.status != 'completed'
+                || request.resource.data.progress == 'Completed - Documents Ready')
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'progress', 'updatedAt'])));
+      allow delete: if false;
+    }
+
+    // The public help form may create a bounded guest ticket; tickets are private thereafter.
+    match /support_tickets/{ticketId} {
+      allow create: if validSupportTicket(request.resource.data)
+        && ((signedIn() && request.resource.data.userId == request.auth.uid)
+          || (!signedIn() && request.resource.data.userId == null))
+        && request.resource.data.createdAt == request.time;
+      allow get, list: if signedIn() && resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /notifications/{notificationId} {
+      allow create: if false;
+      allow get, list: if signedIn() && resource.data.user == request.auth.uid;
+      allow update: if signedIn()
+        && resource.data.user == request.auth.uid
+        && request.resource.data.user == resource.data.user
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['is_read', 'updatedAt'])
+        && request.resource.data.is_read is bool
+        && request.resource.data.updatedAt is timestamp;
+      allow delete: if false;
+    }
+    // Deny every collection not explicitly listed above.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

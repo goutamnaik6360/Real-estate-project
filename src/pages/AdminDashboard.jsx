@@ -1,994 +1,159 @@
-import { useEffect, useState } from "react";
-import { pb } from "../lib/pb";
-import {
-  LayoutDashboard,
-  Users,
-  UserCheck,
-  ClipboardList,
-  Clock3,
-  CheckCircle2,
-  MapPin,
-  Phone,
-  Mail,
-  ShieldCheck,
-  Send,
-  RefreshCw,
-  LogOut,
-  Menu,
-  X,
-  ChevronRight,
-  Search,
-  AlertCircle,
-} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { backend } from "../lib/firebaseBackend";
+import { Check, Clock3, LogOut, MapPin, Phone, RefreshCw, ShieldCheck, UserRound, X } from "lucide-react";
 
 export default function AdminDashboard() {
-  const [pendingAgents, setPendingAgents] = useState([]);
-  const [pendingRequests, setPendingRequests] = useState([]);
-  const [allUsers, setAllUsers] = useState([]);
-  const [allRequests, setAllRequests] = useState([]);
-  const [activeTab, setActiveTab] = useState("dashboard");
-  const [search, setSearch] = useState("");
+  const currentUser = backend.authStore.model;
+  const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [mobileMenu, setMobileMenu] = useState(false);
+  const [busyAgentId, setBusyAgentId] = useState("");
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
+  const loadPendingAgents = useCallback(async () => {
+    setLoading(true);
+    setError("");
     try {
-      setLoading(true);
-
-      const agents = await pb.collection("users").getFullList({
-  filter: 'role="agent" && status="pending"',
-  sort: "-created",
-  requestKey: null,
-});
-
-      const requests = await pb.collection("requests").getFullList({
-        filter: 'status="admin_review"',
-        sort: "-created",
-        expand: "user",
-      });
-
-      const users = await pb.collection("users").getFullList({
+      const pending = await backend.collection("users").getFullList({
+        filter: 'role="agent" && status="pending"',
         sort: "-created",
       });
-
-      const allReqs = await pb.collection("requests").getFullList({
-        sort: "-created",
-        expand: "user",
-      });
-
-      setPendingAgents(agents);
-      setPendingRequests(requests);
-      setAllUsers(users);
-      setAllRequests(allReqs);
-    } catch (error) {
-      console.error("Admin dashboard error:", error);
+      setAgents(pending);
+    } catch (err) {
+      console.error("Could not load pending agent applications:", err);
+      setError("Could not load agent applications. Check that this account has the Admin role and try again.");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const approveAgent = async (agentId) => {
+  useEffect(() => {
+    if (!currentUser) {
+      window.location.replace("/login");
+      return;
+    }
+    if (currentUser.role !== "admin") {
+      window.location.replace(currentUser.role === "agent" ? "/dashboard/agent" : "/dashboard/user");
+      return;
+    }
+    loadPendingAgents();
+  }, [currentUser?.id, currentUser?.role, loadPendingAgents]);
+
+  const decideAgent = async (agent, status) => {
+    setBusyAgentId(agent.id);
+    setError("");
+    setNotice("");
     try {
-      await pb.collection("users").update(agentId, {
-        status: "approved",
-      });
-
-      alert("Agent approved successfully!");
-      fetchDashboardData();
-    } catch (error) {
-      console.error(error);
-      alert("Unable to approve agent.");
+      await backend.collection("users").update(agent.id, { status });
+      setAgents((current) => current.filter((item) => item.id !== agent.id));
+      setNotice(`${agent.name || "Agent application"} ${status === "approved" ? "approved" : "rejected"}.`);
+    } catch (err) {
+      console.error(`Could not ${status} agent application:`, err);
+      setError("The decision could not be saved. Confirm the Admin role and try again.");
+    } finally {
+      setBusyAgentId("");
     }
   };
 
-  const rejectAgent = async (agentId) => {
-    try {
-      await pb.collection("users").update(agentId, {
-        status: "rejected",
-      });
-
-      alert("Agent rejected.");
-      fetchDashboardData();
-    } catch (error) {
-      console.error(error);
-      alert("Unable to reject agent.");
-    }
+  const logout = async () => {
+    await backend.authStore.clear();
+    window.location.replace("/login");
   };
 
-  const sendToAgents = async (requestId) => {
-    try {
-      await pb.collection("requests").update(requestId, {
-        status: "pending_agent",
-      });
-
-      alert("Request is now available to Agents.");
-      fetchDashboardData();
-    } catch (error) {
-      console.error(error);
-      alert("Unable to send request to Agents.");
-    }
-  };
-
-  const logout = () => {
-    pb.authStore.clear();
-    window.location.href = "/login";
-  };
-
-  const totalAgents = allUsers.filter(
-    (user) => user.role === "agent"
-  ).length;
-
-  const approvedAgents = allUsers.filter(
-    (user) => user.role === "agent" && user.status === "approved"
-  ).length;
-
-  const activeRequests = allRequests.filter(
-    (request) => request.status === "in_progress"
-  ).length;
-
-  const completedRequests = allRequests.filter(
-    (request) => request.status === "completed"
-  ).length;
-
-  const filteredUsers = allUsers.filter((user) =>
-    `${user.name} ${user.email} ${user.role}`
-      .toLowerCase()
-      .includes(search.toLowerCase())
-  );
-
-  const filteredRequests = allRequests.filter((request) =>
-    `${request.serviceName} ${request.applicantName} ${request.location}`
-      .toLowerCase()
-      .includes(search.toLowerCase())
-  );
+  if (currentUser?.role !== "admin") return null;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-
-      {/* MOBILE OVERLAY */}
-      {mobileMenu && (
-        <div
-          className="fixed inset-0 bg-black/40 z-40 lg:hidden"
-          onClick={() => setMobileMenu(false)}
-        />
-      )}
-
-      {/* SIDEBAR */}
-      <aside
-        className={`fixed lg:sticky top-0 left-0 z-50 h-screen w-72 bg-slate-950 text-white flex flex-col transition-transform duration-300 ${
-          mobileMenu
-            ? "translate-x-0"
-            : "-translate-x-full lg:translate-x-0"
-        }`}
-      >
-
-        {/* LOGO */}
-        <div className="h-20 px-6 flex items-center justify-between border-b border-white/10">
+    <main className="min-h-screen bg-slate-50">
+      <header className="border-b border-slate-200 bg-white">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 md:px-8">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center">
-              <ShieldCheck size={22} />
-            </div>
-
+            <div className="rounded-2xl bg-blue-700 p-3 text-white"><ShieldCheck size={24} /></div>
             <div>
-              <h1 className="font-black text-lg">
-                EstateSync
-              </h1>
-
-              <p className="text-xs text-slate-400">
-                Admin Portal
-              </p>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">ESTATE-SYNC</p>
+              <h1 className="text-xl font-black text-slate-900">Agent approvals</h1>
             </div>
           </div>
-
-          <button
-            className="lg:hidden"
-            onClick={() => setMobileMenu(false)}
-          >
-            <X size={22} />
-          </button>
-        </div>
-
-        {/* ADMIN PROFILE */}
-        <div className="p-5">
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-            <div className="flex items-center gap-3">
-
-              <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center">
-                <ShieldCheck size={22} />
-              </div>
-
-              <div>
-                <p className="font-bold">
-                  EstateSync Admin
-                </p>
-
-                <div className="flex items-center gap-1 mt-1">
-                  <span className="w-2 h-2 bg-emerald-400 rounded-full" />
-                  <span className="text-xs text-emerald-400">
-                    Administrator
-                  </span>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </div>
-
-        {/* NAVIGATION */}
-        <nav className="px-4 space-y-2 flex-1">
-
-          <NavButton
-            icon={<LayoutDashboard size={19} />}
-            label="Dashboard"
-            active={activeTab === "dashboard"}
-            onClick={() => {
-              setActiveTab("dashboard");
-              setMobileMenu(false);
-            }}
-          />
-
-          <NavButton
-            icon={<UserCheck size={19} />}
-            label="Agent Approvals"
-            badge={pendingAgents.length}
-            active={activeTab === "agents"}
-            onClick={() => {
-              setActiveTab("agents");
-              setMobileMenu(false);
-            }}
-          />
-
-          <NavButton
-            icon={<ClipboardList size={19} />}
-            label="Service Requests"
-            badge={pendingRequests.length}
-            active={activeTab === "requests"}
-            onClick={() => {
-              setActiveTab("requests");
-              setMobileMenu(false);
-            }}
-          />
-
-          <NavButton
-            icon={<Users size={19} />}
-            label="Users"
-            active={activeTab === "users"}
-            onClick={() => {
-              setActiveTab("users");
-              setMobileMenu(false);
-            }}
-          />
-
-        </nav>
-
-        {/* LOGOUT */}
-        <div className="p-4 border-t border-white/10">
-          <button
-            onClick={logout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition"
-          >
-            <LogOut size={19} />
-            <span className="font-semibold">
-              Logout
-            </span>
-          </button>
-        </div>
-
-      </aside>
-
-      {/* MAIN */}
-      <main className="flex-1 min-w-0">
-
-        {/* HEADER */}
-        <header className="h-20 bg-white border-b border-slate-200 sticky top-0 z-30 flex items-center justify-between px-5 md:px-8">
-
-          <div className="flex items-center gap-4">
-
-            <button
-              className="lg:hidden"
-              onClick={() => setMobileMenu(true)}
-            >
-              <Menu size={23} />
+          <div className="flex items-center gap-2">
+            <button onClick={loadPendingAgents} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50" aria-label="Refresh applications">
+              <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+              <span className="hidden sm:inline">Refresh</span>
             </button>
-
-            <div>
-              <p className="text-xs text-slate-400 font-semibold">
-                EstateSync Administration
-              </p>
-
-              <h2 className="font-black text-slate-900">
-                {activeTab === "dashboard"
-                  ? "Dashboard"
-                  : activeTab === "agents"
-                  ? "Agent Approvals"
-                  : activeTab === "requests"
-                  ? "Service Requests"
-                  : "Users"}
-              </h2>
-            </div>
-
+            <button onClick={logout} className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-slate-700">
+              <LogOut size={16} />
+              <span className="hidden sm:inline">Log out</span>
+            </button>
           </div>
+        </div>
+      </header>
 
-          <button
-            onClick={fetchDashboardData}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-sm font-bold"
-          >
-            <RefreshCw size={16} />
-            <span className="hidden sm:inline">
-              Refresh
-            </span>
-          </button>
+      <section className="mx-auto max-w-6xl px-5 py-8 md:px-8">
+        <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold text-slate-500">Review agent applications</p>
+            <h2 className="mt-1 text-3xl font-black text-slate-900">Approve or reject Agents</h2>
+          </div>
+          <span className="rounded-full bg-amber-100 px-4 py-2 text-sm font-bold text-amber-800">{agents.length} pending</span>
+        </div>
 
-        </header>
+        {error && <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-800" role="alert">{error}</div>}
+        {notice && <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800" role="status">{notice}</div>}
 
-        <div className="p-5 md:p-8 max-w-7xl mx-auto">
-
-          {/* DASHBOARD */}
-          {activeTab === "dashboard" && (
-            <>
-              <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white rounded-3xl p-7 md:p-9 mb-7 relative overflow-hidden">
-
-                <div className="relative z-10">
-
-                  <div className="inline-flex items-center gap-2 bg-white/10 border border-white/10 rounded-full px-3 py-1.5 text-xs font-bold mb-5">
-                    <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-                    System Online
+        {loading ? (
+          <div className="rounded-3xl border border-slate-200 bg-white p-12 text-center text-slate-600" role="status">
+            <RefreshCw size={28} className="mx-auto mb-3 animate-spin text-blue-600" />
+            Loading agent applications...
+          </div>
+        ) : agents.length === 0 ? (
+          <div className="rounded-3xl border border-slate-200 bg-white p-12 text-center">
+            <div className="mx-auto mb-4 inline-flex rounded-2xl bg-emerald-100 p-4 text-emerald-700"><Check size={28} /></div>
+            <h3 className="text-xl font-black text-slate-900">No pending applications</h3>
+            <p className="mt-2 text-slate-600">New Agent registrations will appear here for review.</p>
+          </div>
+        ) : (
+          <div className="grid gap-5 lg:grid-cols-2">
+            {agents.map((agent) => {
+              const maskedId = agent.aadhaar ? `•••• ${String(agent.aadhaar).slice(-4)}` : "Not provided";
+              const isBusy = busyAgentId === agent.id;
+              return (
+                <article key={agent.id} className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                  <div className="flex items-start justify-between gap-4 border-b border-slate-100 p-6">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-2xl bg-blue-50 p-3 text-blue-700"><UserRound size={22} /></div>
+                      <div>
+                        <h3 className="text-lg font-black text-slate-900">{agent.name || "Unnamed Agent"}</h3>
+                        <p className="mt-0.5 break-all text-sm text-slate-500">{agent.email}</p>
+                      </div>
+                    </div>
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-800"><Clock3 size={13} />Pending</span>
                   </div>
-
-                  <h1 className="text-3xl md:text-4xl font-black mb-3">
-                    Welcome, Admin 👋
-                  </h1>
-
-                  <p className="text-slate-300 max-w-xl">
-                    Manage EstateSync users, agents and
-                    property-service applications from one place.
-                  </p>
-
-                </div>
-
-                <div className="absolute -right-20 -bottom-32 w-80 h-80 bg-blue-600/20 rounded-full blur-3xl" />
-
-              </div>
-
-              {/* STATISTICS */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
-
-                <StatCard
-                  title="Total Users"
-                  value={allUsers.length}
-                  icon={<Users size={22} />}
-                  color="blue"
-                />
-
-                <StatCard
-                  title="Total Agents"
-                  value={totalAgents}
-                  icon={<UserCheck size={22} />}
-                  color="purple"
-                />
-
-                <StatCard
-                  title="Pending Approvals"
-                  value={pendingAgents.length}
-                  icon={<Clock3 size={22} />}
-                  color="orange"
-                />
-
-                <StatCard
-                  title="Active Requests"
-                  value={activeRequests}
-                  icon={<ClipboardList size={22} />}
-                  color="green"
-                />
-
-              </div>
-
-              {/* QUICK ACTIONS */}
-              <div className="grid lg:grid-cols-2 gap-7">
-
-                <DashboardPanel
-                  title="Agent Approvals"
-                  icon={<UserCheck size={20} />}
-                  count={pendingAgents.length}
-                  onClick={() => setActiveTab("agents")}
-                >
-
-                  {pendingAgents.length === 0 ? (
-                    <EmptyState
-                      icon={<CheckCircle2 size={28} />}
-                      title="All agents reviewed"
-                      text="There are no pending agent applications."
-                    />
-                  ) : (
-                    pendingAgents.slice(0, 3).map((agent) => (
-                      <AgentCard
-                        key={agent.id}
-                        agent={agent}
-                        approve={approveAgent}
-                        reject={rejectAgent}
-                      />
-                    ))
-                  )}
-
-                </DashboardPanel>
-
-                <DashboardPanel
-                  title="New Service Requests"
-                  icon={<ClipboardList size={20} />}
-                  count={pendingRequests.length}
-                  onClick={() => setActiveTab("requests")}
-                >
-
-                  {pendingRequests.length === 0 ? (
-                    <EmptyState
-                      icon={<CheckCircle2 size={28} />}
-                      title="No pending requests"
-                      text="There are no requests waiting for review."
-                    />
-                  ) : (
-                    pendingRequests.slice(0, 3).map((request) => (
-                      <RequestCard
-                        key={request.id}
-                        request={request}
-                        send={sendToAgents}
-                      />
-                    ))
-                  )}
-
-                </DashboardPanel>
-
-              </div>
-            </>
-          )}
-
-          {/* AGENTS */}
-          {activeTab === "agents" && (
-            <>
-              <PageHeading
-                title="Agent Approvals"
-                subtitle="Review and manage EstateSync field agents."
-              />
-
-              {pendingAgents.length === 0 ? (
-                <EmptyState
-                  large
-                  icon={<CheckCircle2 size={36} />}
-                  title="No pending agents"
-                  text="All agent applications have been reviewed."
-                />
-              ) : (
-                <div className="grid lg:grid-cols-2 gap-5">
-
-                  {pendingAgents.map((agent) => (
-                    <AgentCard
-                      key={agent.id}
-                      agent={agent}
-                      approve={approveAgent}
-                      reject={rejectAgent}
-                      large
-                    />
-                  ))}
-
-                </div>
-              )}
-            </>
-          )}
-
-          {/* REQUESTS */}
-          {activeTab === "requests" && (
-            <>
-              <PageHeading
-                title="Service Requests"
-                subtitle="Review incoming applications and send them to agents."
-              />
-
-              <SearchBox
-                value={search}
-                onChange={setSearch}
-                placeholder="Search requests..."
-              />
-
-              <div className="space-y-4 mt-6">
-
-                {filteredRequests.length === 0 ? (
-                  <EmptyState
-                    large
-                    icon={<ClipboardList size={36} />}
-                    title="No requests found"
-                    text="No service requests match your search."
-                  />
-                ) : (
-                  filteredRequests.map((request) => (
-                    <RequestCard
-                      key={request.id}
-                      request={request}
-                      send={sendToAgents}
-                      large
-                    />
-                  ))
-                )}
-
-              </div>
-            </>
-          )}
-
-          {/* USERS */}
-          {activeTab === "users" && (
-            <>
-              <PageHeading
-                title="Users"
-                subtitle="View EstateSync user and agent accounts."
-              />
-
-              <SearchBox
-                value={search}
-                onChange={setSearch}
-                placeholder="Search by name, email or role..."
-              />
-
-              <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden mt-6">
-
-                <div className="overflow-x-auto">
-
-                  <table className="w-full text-left">
-
-                    <thead className="bg-slate-50 border-b border-slate-200">
-                      <tr>
-                        <th className="p-5 text-xs font-black uppercase text-slate-400">
-                          User
-                        </th>
-
-                        <th className="p-5 text-xs font-black uppercase text-slate-400">
-                          Role
-                        </th>
-
-                        <th className="p-5 text-xs font-black uppercase text-slate-400">
-                          Status
-                        </th>
-                      </tr>
-                    </thead>
-
-                    <tbody>
-
-                      {filteredUsers.map((user) => (
-                        <tr
-                          key={user.id}
-                          className="border-b border-slate-100 last:border-0 hover:bg-slate-50"
-                        >
-
-                          <td className="p-5">
-
-                            <div className="flex items-center gap-3">
-
-                              <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-black">
-                                {user.name?.charAt(0)?.toUpperCase() || "U"}
-                              </div>
-
-                              <div>
-                                <p className="font-bold text-slate-900">
-                                  {user.name || "Unnamed User"}
-                                </p>
-
-                                <p className="text-xs text-slate-500">
-                                  {user.email}
-                                </p>
-                              </div>
-
-                            </div>
-
-                          </td>
-
-                          <td className="p-5">
-                            <RoleBadge role={user.role} />
-                          </td>
-
-                          <td className="p-5">
-                            <StatusBadge status={user.status} />
-                          </td>
-
-                        </tr>
-                      ))}
-
-                    </tbody>
-
-                  </table>
-
-                </div>
-
-              </div>
-            </>
-          )}
-
-        </div>
-      </main>
-    </div>
-  );
-}
-
-/* ---------------- COMPONENTS ---------------- */
-
-function NavButton({
-  icon,
-  label,
-  badge,
-  active,
-  onClick,
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition ${
-        active
-          ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20"
-          : "text-slate-400 hover:bg-white/5 hover:text-white"
-      }`}
-    >
-      {icon}
-
-      <span className="font-semibold flex-1 text-left">
-        {label}
-      </span>
-
-      {badge > 0 && (
-        <span
-          className={`text-xs px-2 py-0.5 rounded-full ${
-            active
-              ? "bg-white/20"
-              : "bg-slate-800"
-          }`}
-        >
-          {badge}
-        </span>
-      )}
-    </button>
-  );
-}
-
-function StatCard({
-  title,
-  value,
-  icon,
-  color,
-}) {
-  const colors = {
-    blue: "bg-blue-100 text-blue-600",
-    purple: "bg-purple-100 text-purple-600",
-    orange: "bg-orange-100 text-orange-600",
-    green: "bg-emerald-100 text-emerald-600",
-  };
-
-  return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-
-      <div className="flex items-start justify-between">
-
-        <div>
-          <p className="text-sm font-semibold text-slate-500">
-            {title}
-          </p>
-
-          <p className="text-3xl font-black text-slate-900 mt-2">
-            {value}
-          </p>
-        </div>
-
-        <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${colors[color]}`}>
-          {icon}
-        </div>
-
-      </div>
-
-    </div>
-  );
-}
-
-function DashboardPanel({
-  title,
-  icon,
-  count,
-  children,
-  onClick,
-}) {
-  return (
-    <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
-
-      <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-
-        <div className="flex items-center gap-3">
-
-          <div className="text-blue-600">
-            {icon}
+                  <div className="grid gap-3 p-6 text-sm sm:grid-cols-2">
+                    <Info icon={<Phone size={16} />} label="Phone" value={agent.phone || "Not provided"} />
+                    <Info icon={<MapPin size={16} />} label="Location" value={agent.location || "Not provided"} />
+                    <Info icon={<ShieldCheck size={16} />} label="Aadhaar" value={maskedId} />
+                  </div>
+                  <div className="flex flex-col gap-3 border-t border-slate-100 bg-slate-50 p-5 sm:flex-row">
+                    <button onClick={() => decideAgent(agent, "approved")} disabled={isBusy} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 font-bold text-white hover:bg-emerald-800 disabled:opacity-50">
+                      <Check size={18} /> {isBusy ? "Saving..." : "Approve Agent"}
+                    </button>
+                    <button onClick={() => decideAgent(agent, "rejected")} disabled={isBusy} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-3 font-bold text-red-700 hover:bg-red-50 disabled:opacity-50">
+                      <X size={18} /> Reject
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
           </div>
-
-          <div>
-            <h2 className="font-black text-slate-900">
-              {title}
-            </h2>
-
-            <p className="text-xs text-slate-500">
-              {count} pending
-            </p>
-          </div>
-
-        </div>
-
-        <button
-          onClick={onClick}
-          className="text-blue-600 font-bold text-sm flex items-center gap-1"
-        >
-          View all
-          <ChevronRight size={16} />
-        </button>
-
-      </div>
-
-      <div className="p-5 space-y-4">
-        {children}
-      </div>
-
-    </div>
+        )}
+      </section>
+    </main>
   );
 }
 
-function AgentCard({
-  agent,
-  approve,
-  reject,
-  large,
-}) {
+function Info({ icon, label, value }) {
   return (
-    <div className={`bg-white border border-slate-200 rounded-2xl p-5 ${large ? "shadow-sm" : ""}`}>
-
-      <div className="flex items-start gap-4">
-
-        <div className="w-12 h-12 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0">
-          <UserCheck size={22} />
-        </div>
-
-        <div className="flex-1 min-w-0">
-
-          <div className="flex items-center justify-between gap-3">
-
-            <div>
-              <h3 className="font-black text-slate-900">
-                {agent.name || "Unnamed Agent"}
-              </h3>
-
-              <p className="text-sm text-slate-500 flex items-center gap-1 mt-1">
-                <Mail size={14} />
-                {agent.email}
-              </p>
-            </div>
-
-            <span className="bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full text-xs font-bold">
-              Pending
-            </span>
-
-          </div>
-
-          <div className="grid sm:grid-cols-2 gap-2 mt-4">
-
-            <p className="text-xs text-slate-500 flex items-center gap-2">
-              <Phone size={14} />
-              {agent.phone || "No phone"}
-            </p>
-
-            <p className="text-xs text-slate-500 flex items-center gap-2">
-              <MapPin size={14} />
-              {agent.location || "No location"}
-            </p>
-
-          </div>
-
-          <div className="flex gap-3 mt-5">
-
-            <button
-              onClick={() => approve(agent.id)}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold text-sm transition flex items-center justify-center gap-2"
-            >
-              <CheckCircle2 size={16} />
-              Approve
-            </button>
-
-            <button
-              onClick={() => reject(agent.id)}
-              className="flex-1 bg-red-50 hover:bg-red-100 text-red-600 py-2.5 rounded-xl font-bold text-sm transition"
-            >
-              Reject
-            </button>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
-  );
-}
-
-function RequestCard({
-  request,
-  send,
-  large,
-}) {
-  const canSend = request.status === "admin_review";
-
-  return (
-    <div className={`bg-white border border-slate-200 rounded-2xl p-5 ${large ? "shadow-sm" : ""}`}>
-
-      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-
-        <div className="flex gap-4">
-
-          <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
-            <ClipboardList size={22} />
-          </div>
-
-          <div>
-
-            <h3 className="font-black text-slate-900">
-              {request.serviceName}
-            </h3>
-
-            <p className="text-sm text-slate-600 mt-1">
-              Applicant:{" "}
-              <strong>{request.applicantName}</strong>
-            </p>
-
-            <div className="flex flex-wrap gap-4 mt-3">
-
-              <span className="text-xs text-slate-500 flex items-center gap-1.5">
-                <MapPin size={14} />
-                {request.location || "No location"}
-              </span>
-
-              <span className="text-xs text-slate-500 flex items-center gap-1.5">
-                <Phone size={14} />
-                {request.phone || "No phone"}
-              </span>
-
-            </div>
-
-            <p className="text-sm text-slate-500 mt-3">
-              {request.details || "No additional details."}
-            </p>
-
-          </div>
-
-        </div>
-
-        <StatusBadge status={request.status} />
-
-      </div>
-
-      {canSend && (
-        <button
-          onClick={() => send(request.id)}
-          className="w-full mt-5 bg-slate-950 hover:bg-blue-600 text-white py-3 rounded-xl font-bold transition flex items-center justify-center gap-2"
-        >
-          <Send size={17} />
-          Send to Agent Pool
-        </button>
-      )}
-
-    </div>
-  );
-}
-
-function StatusBadge({ status }) {
-  const styles = {
-    pending: "bg-orange-100 text-orange-700",
-    approved: "bg-emerald-100 text-emerald-700",
-    rejected: "bg-red-100 text-red-700",
-    admin_review: "bg-blue-100 text-blue-700",
-    pending_agent: "bg-purple-100 text-purple-700",
-    in_progress: "bg-yellow-100 text-yellow-700",
-    completed: "bg-emerald-100 text-emerald-700",
-  };
-
-  return (
-    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${styles[status] || "bg-slate-100 text-slate-600"}`}>
-      {status === "approved" || status === "completed" ? (
-        <CheckCircle2 size={13} />
-      ) : status === "pending" || status === "admin_review" ? (
-        <Clock3 size={13} />
-      ) : (
-        <AlertCircle size={13} />
-      )}
-
-      {status?.replaceAll("_", " ") || "Unknown"}
-    </span>
-  );
-}
-
-function RoleBadge({ role }) {
-  const style =
-    role === "admin"
-      ? "bg-purple-100 text-purple-700"
-      : role === "agent"
-      ? "bg-blue-100 text-blue-700"
-      : "bg-slate-100 text-slate-700";
-
-  return (
-    <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${style}`}>
-      {role || "user"}
-    </span>
-  );
-}
-
-function SearchBox({
-  value,
-  onChange,
-  placeholder,
-}) {
-  return (
-    <div className="relative max-w-xl">
-
-      <Search
-        size={18}
-        className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-      />
-
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
-      />
-
-    </div>
-  );
-}
-
-function EmptyState({
-  icon,
-  title,
-  text,
-  large,
-}) {
-  return (
-    <div
-      className={`text-center py-12 ${
-        large
-          ? "bg-white rounded-3xl border border-slate-200"
-          : ""
-      }`}
-    >
-
-      <div className="w-16 h-16 mx-auto rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mb-4">
-        {icon}
-      </div>
-
-      <h3 className="font-black text-slate-800">
-        {title}
-      </h3>
-
-      <p className="text-sm text-slate-500 mt-2 max-w-sm mx-auto">
-        {text}
-      </p>
-
-    </div>
-  );
-}
-
-function PageHeading({
-  title,
-  subtitle,
-}) {
-  return (
-    <div className="mb-7">
-      <h1 className="text-3xl font-black text-slate-900">
-        {title}
-      </h1>
-
-      <p className="text-slate-500 mt-2">
-        {subtitle}
-      </p>
+    <div className="min-w-0 rounded-2xl bg-slate-50 p-4">
+      <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-500">{icon}{label}</p>
+      <p className="mt-2 break-words font-semibold text-slate-900">{value}</p>
     </div>
   );
 }

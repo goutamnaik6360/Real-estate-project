@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { servicesData } from "../utils/servicesData";
-import { pb } from "../lib/pb";
+import { backend } from "../lib/firebaseBackend";
 import { ArrowRight, FileSignature, FolderOpen } from "lucide-react";
 
 export default function Services() {
@@ -9,7 +9,7 @@ export default function Services() {
 
   // SECURITY CHECK: Agents cannot access the services catalog
   useEffect(() => {
-    if (pb.authStore.isValid && pb.authStore.model?.role === 'agent') {
+    if (backend.authStore.isValid && backend.authStore.model?.role === 'agent') {
       alert("Access Denied: Agents cannot apply for services.");
       navigate("/dashboard/agent");
     }

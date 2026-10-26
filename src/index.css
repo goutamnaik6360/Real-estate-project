@@ -32,3 +32,16 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #3b82f6;
 }
+
+/* Refined home page */
+.home-page { --ink: #17312f; --teal: #0d514b; }
+.home-nav { box-shadow: 0 8px 30px #17312f08; }
+.home-hero { background: radial-gradient(ellipse at 78% 35%, #dcebe3 0%, #edf1e9 34%, #f7f7f2 72%); }
+.home-photo img { transition: transform 700ms cubic-bezier(.2,.7,.2,1); }
+.home-photo:hover img { transform: scale(1.035); }
+.home-process { background: #eef2ec; }
+.home-service { box-shadow: 0 8px 24px #173b2d08; }
+.home-page ::selection { background: #b6d3c7; color: #17312f; }
+@media (prefers-reduced-motion: reduce) {
+  .home-page *, .home-page *::before, .home-page *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+}

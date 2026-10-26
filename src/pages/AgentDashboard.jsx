@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { pb } from "../lib/pb";
+import { backend } from "../lib/firebaseBackend";
 import {
   LayoutDashboard,
   Briefcase,
@@ -22,14 +22,23 @@ export default function AgentDashboard() {
   const [openRequests, setOpenRequests] = useState([]);
   const [myJobs, setMyJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState("");
   const [mobileMenu, setMobileMenu] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
 
-  const currentUser = pb.authStore.model;
+  const currentUser = backend.authStore.model;
 
   useEffect(() => {
     if (!currentUser) {
       window.location.href = "/login";
+      return;
+    }
+    if (currentUser.role !== "agent") {
+      window.location.href = currentUser.role === "admin" ? "/dashboard/admin" : "/dashboard/user";
+      return;
+    }
+    if (currentUser.status !== "approved") {
+      setLoading(false);
       return;
     }
 
@@ -37,16 +46,24 @@ export default function AgentDashboard() {
   }, []);
 
   const fetchWork = async () => {
+    if (!currentUser || currentUser.role !== "agent" || currentUser.status !== "approved") {
+      setOpenRequests([]);
+      setMyJobs([]);
+      setFetchError("");
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
+      setFetchError("");
 
-      const available = await pb.collection("requests").getFullList({
+      const available = await backend.collection("requests").getFullList({
         filter: 'status="pending_agent"',
         sort: "-created",
         expand: "user",
       });
 
-      const mine = await pb.collection("requests").getFullList({
+      const mine = await backend.collection("requests").getFullList({
         filter: `assignedAgent="${currentUser.id}"`,
         sort: "-created",
         expand: "user",
@@ -56,6 +73,7 @@ export default function AgentDashboard() {
       setMyJobs(mine);
     } catch (err) {
       console.error("Failed to fetch agent work:", err);
+      setFetchError("Could not load jobs. Check your connection or account approval, then refresh.");
     } finally {
       setLoading(false);
     }
@@ -63,7 +81,7 @@ export default function AgentDashboard() {
 
   const acceptRequest = async (requestId) => {
     try {
-      await pb.collection("requests").update(requestId, {
+      await backend.collection("requests").update(requestId, {
         status: "in_progress",
         progress: "Agent Assigned - Reviewing Documents",
         assignedAgent: currentUser.id,
@@ -86,7 +104,7 @@ export default function AgentDashboard() {
         newStatus = "completed";
       }
 
-      await pb.collection("requests").update(requestId, {
+      await backend.collection("requests").update(requestId, {
         progress: newProgressStatus,
         status: newStatus,
       });
@@ -99,7 +117,7 @@ export default function AgentDashboard() {
   };
 
   const logout = () => {
-    pb.authStore.clear();
+    backend.authStore.clear();
     window.location.href = "/login";
   };
 
@@ -143,7 +161,7 @@ export default function AgentDashboard() {
             </div>
 
             <div>
-              <h1 className="font-black text-lg">EstateSync</h1>
+              <h1 className="font-black text-lg">ESTATE-SYNC</h1>
               <p className="text-xs text-slate-400">Agent Portal</p>
             </div>
           </div>
@@ -172,7 +190,7 @@ export default function AgentDashboard() {
                 <div className="flex items-center gap-1 mt-1">
                   <CheckCircle2 size={13} className="text-emerald-400" />
                   <span className="text-xs text-emerald-400">
-                    Verified Agent
+                    {currentUser?.status === "approved" ? "Approved Agent" : "Pending Approval"}
                   </span>
                 </div>
               </div>
@@ -277,6 +295,25 @@ export default function AgentDashboard() {
         </header>
 
         <div className="p-5 md:p-8 max-w-7xl mx-auto">
+          {currentUser?.status !== "approved" ? (
+            <div className={`max-w-3xl rounded-3xl border bg-white p-8 shadow-sm ${currentUser?.status === "rejected" ? "border-red-200" : "border-amber-200"}`} role="status">
+              <div className={`mb-4 inline-flex rounded-2xl p-3 ${currentUser?.status === "rejected" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}><Clock3 size={24} /></div>
+              <h1 className="text-2xl font-black text-slate-900">{currentUser?.status === "rejected" ? "Your agent application was not approved" : "Your agent application is under review"}</h1>
+              <p className="mt-2 leading-relaxed text-slate-600">{currentUser?.status === "rejected" ? "Your account cannot access Agent services. Contact ESTATE-SYNC support if you think this decision was made in error." : "You can sign in now. An administrator needs to approve your agent account before you can view or claim service jobs."}</p>
+              {currentUser?.status !== "rejected" && <p className="mt-4 text-sm font-semibold text-slate-500">Once approved, refresh this page to open your Agent Dashboard.</p>}
+            </div>          ) : loading ? (
+            <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center text-slate-600" role="status">
+              <RefreshCw size={28} className="mx-auto mb-3 animate-spin text-blue-600" />
+              Loading your Agent Dashboard
+            </div>
+          ) : (
+            <>
+          {fetchError && (
+            <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-5 text-red-800" role="alert">
+              <p className="font-semibold">{fetchError}</p>
+              <button onClick={fetchWork} className="mt-2 text-sm font-bold underline">Try again</button>
+            </div>
+          )}
 
           {/* DASHBOARD */}
           {activeTab === "dashboard" && (
@@ -287,7 +324,7 @@ export default function AgentDashboard() {
                 <div className="relative z-10 max-w-2xl">
                   <div className="inline-flex items-center gap-2 bg-white/10 border border-white/10 px-3 py-1.5 rounded-full text-xs font-bold mb-5">
                     <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-                    Agent account active
+                    {currentUser?.status === "approved" ? "Agent account active" : "Approval pending"}
                   </div>
 
                   <h1 className="text-3xl md:text-4xl font-black mb-3">
@@ -464,7 +501,7 @@ export default function AgentDashboard() {
             <div>
               <PageHeading
                 title="My Profile"
-                subtitle="Your EstateSync agent information."
+                subtitle="Your ESTATE-SYNC agent information."
               />
 
               <div className="max-w-3xl bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
@@ -481,12 +518,12 @@ export default function AgentDashboard() {
                       </h2>
 
                       <p className="text-slate-300">
-                        EstateSync Field Agent
+                        ESTATE-SYNC Field Agent
                       </p>
 
                       <div className="inline-flex items-center gap-1.5 mt-3 bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full text-xs font-bold">
                         <CheckCircle2 size={13} />
-                        Approved Agent
+                        {currentUser?.status === "approved" ? "Approved Agent" : "Pending Approval"}
                       </div>
                     </div>
                   </div>
@@ -521,12 +558,14 @@ export default function AgentDashboard() {
 
                   <ProfileItem
                     label="Account Status"
-                    value={currentUser?.status || "approved"}
+                    value={currentUser?.status || "pending"}
                   />
 
                 </div>
               </div>
             </div>
+          )}
+            </>
           )}
 
         </div>

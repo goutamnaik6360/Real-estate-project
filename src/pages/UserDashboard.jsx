@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { pb } from "../lib/pb";
+import { backend } from "../lib/firebaseBackend";
 import {
   LayoutDashboard,
   ClipboardList,
@@ -21,7 +21,7 @@ export default function UserDashboard() {
   const [myRequests, setMyRequests] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const currentUser = pb.authStore.model;
+  const currentUser = backend.authStore.model;
 
   useEffect(() => {
     if (currentUser?.id) {
@@ -33,7 +33,7 @@ export default function UserDashboard() {
     try {
       setLoading(true);
 
-      const records = await pb.collection("requests").getFullList({
+      const records = await backend.collection("requests").getFullList({
         filter: `user="${currentUser.id}"`,
         sort: "-created",
       });
@@ -47,7 +47,7 @@ export default function UserDashboard() {
   };
 
   const handleLogout = () => {
-    pb.authStore.clear();
+    backend.authStore.clear();
     window.location.href = "/login";
   };
 
@@ -164,7 +164,7 @@ export default function UserDashboard() {
 
             <div>
               <h1 className="font-black text-xl text-slate-900">
-                EstateSync
+                ESTATE-SYNC
               </h1>
 
               <p className="text-xs text-slate-400">

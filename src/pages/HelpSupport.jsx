@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { pb } from "../lib/pb";
+import { backend } from "../lib/firebaseBackend";
 import { 
   ArrowLeft, 
   Mail, 
@@ -26,11 +26,11 @@ export default function HelpSupport() {
 
   // Auto-fill user details if they are already logged in
   useEffect(() => {
-    if (pb.authStore.isValid && pb.authStore.model) {
+    if (backend.authStore.isValid && backend.authStore.model) {
       setForm((prev) => ({
         ...prev,
-        name: pb.authStore.model.name || "",
-        email: pb.authStore.model.email || "",
+        name: backend.authStore.model.name || "",
+        email: backend.authStore.model.email || "",
       }));
     }
   }, []);
@@ -42,8 +42,8 @@ export default function HelpSupport() {
     setSuccess(false);
 
     try {
-      // Saves the query to the 'support_tickets' collection in PocketBase
-      await pb.collection("support_tickets").create({
+      // Saves the query to the 'support_tickets' collection in Firebase
+      await backend.collection("support_tickets").create({
         name: form.name,
         email: form.email,
         subject: form.subject,

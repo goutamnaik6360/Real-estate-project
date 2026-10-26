@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { servicesData } from "../utils/servicesData";
-import { pb } from "../lib/pb";
+import { backend } from "../lib/firebaseBackend";
 import { 
   ArrowLeft, 
   CheckCircle2, 
@@ -23,14 +23,14 @@ export default function ServiceDetails() {
     setService(foundService);
 
     // SECURITY CHECK: If an Agent tries to view this, redirect them.
-    if (pb.authStore.isValid && pb.authStore.model?.role === 'agent') {
+    if (backend.authStore.isValid && backend.authStore.model?.role === 'agent') {
       alert("Access Denied: Agents cannot apply for user services.");
       navigate("/dashboard/agent");
     }
   }, [id, navigate]);
 
   const handleApply = () => {
-    if (!pb.authStore.isValid) {
+    if (!backend.authStore.isValid) {
       navigate("/register");
       return;
     }
@@ -168,7 +168,7 @@ export default function ServiceDetails() {
                   Apply Now
                 </button>
                 <p className="text-center text-sm text-gray-500 mt-4 font-medium">
-                  {!pb.authStore.isValid ? "You will be asked to log in or register first." : "Proceed to secure application form."}
+                  {!backend.authStore.isValid ? "You will be asked to log in or register first." : "Proceed to secure application form."}
                 </p>
               </div>
             </div>

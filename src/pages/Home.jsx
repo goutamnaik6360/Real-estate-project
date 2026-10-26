@@ -1,394 +1,206 @@
 import { Link } from "react-router-dom";
 import {
-  ShieldCheck,
-  Activity,
+  ArrowDownRight,
   ArrowRight,
-  Gavel,
-  ClipboardCheck,
-  Search,
-  Clock3,
-  FileText,
   BadgeCheck,
-  GitBranch,
-  Home as HomeIcon,
-  Headphones,
-  Lock,
-  IndianRupee,
-  Stamp,
+  Building2,
+  Check,
   CheckCircle2,
-  UserCheck,
-  ClipboardList,
-  PackageCheck,
+  ClipboardCheck,
+  FileCheck2,
+  FileText,
+  Gavel,
+  Headphones,
+  Home as HomeIcon,
+  IndianRupee,
+  LockKeyhole,
+  MapPin,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  Stamp,
+  UserRoundCheck,
 } from "lucide-react";
 
-/* ================= BRAND TOKENS =================
-  paper      #FAF6EC  warm deed-paper background
-  ink        #1B2622  near-black ink for body text
-  primary    #0E4D46  deep ledger-green (registry ink)
-  primaryDk  #0A3733
-  primaryLt  #15736A
-  gold       #B8862B  brass seal
-  goldLt     #D9A94A
-  maroon     #8B3232  stamp red, used sparingly
-================================================== */
+const services = [
+  { icon: <FileText />, title: "Property registration", text: "Guidance and paperwork support from start to finish." },
+  { icon: <Search />, title: "Document checks", text: "Understand your records before you make a decision." },
+  { icon: <Building2 />, title: "Khata & mutation", text: "Help with local records, transfers, and updates." },
+  { icon: <FileCheck2 />, title: "Certificates & NOCs", text: "Get help preparing and filing the right documents." },
+];
+
+const steps = [
+  { number: "01", title: "Tell us what you need", text: "Choose a service and share a few details about your property." },
+  { number: "02", title: "Meet your local expert", text: "We connect you with a verified professional in your area." },
+  { number: "03", title: "Track every update", text: "Follow the progress while your documents are handled." },
+];
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#FAF6EC] font-[Inter]">
+    <main className="home-page min-h-screen bg-[#f7f7f2] text-[#172b2a]">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap');
-        .font-display { font-family: 'Fraunces', serif; }
-        .font-mono { font-family: 'IBM Plex Mono', monospace; }
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap');
+        .home-page { font-family: 'DM Sans', sans-serif; }
+        .home-display { font-family: 'Manrope', sans-serif; }
       `}</style>
 
-      {/* ================= NAVBAR ================= */}
-      <nav className="sticky top-0 z-50 border-b border-[#0E4D46]/20 bg-[#0A3733]/97 px-6 py-4 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <Link to="/" className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#B8862B] text-[#0A3733] shadow-lg shadow-black/20">
-              <Stamp size={22} />
-            </div>
-            <div className="font-display text-xl font-semibold tracking-tight">
-              <span className="text-[#D9A94A]">Goutam</span>
-              <span className="text-white"> Property Work</span>
-            </div>
+      <nav className="home-nav sticky top-0 z-50 border-b border-[#172b2a]/[0.07] bg-[#f7f7f2]/90 px-5 backdrop-blur-xl sm:px-8">
+        <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between">
+          <Link to="/" className="flex items-center gap-3" aria-label="ESTATE-SYNC home">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0d514b] text-white shadow-md shadow-[#0d514b]/15"><Stamp size={20} /></span>
+            <span className="home-display text-[17px] font-extrabold tracking-[-0.04em] text-[#17312f]">ESTATE-SYNC</span>
           </Link>
-
-          <div className="hidden items-center gap-8 lg:flex">
-            <Link to="/" className="font-medium text-[#D9A94A]">Home</Link>
-            <Link to="/services" className="font-medium text-white/75 transition hover:text-white">Services</Link>
-            <Link to="/services" className="font-medium text-white/75 transition hover:text-white">How It Works</Link>
-            <Link to="/" className="font-medium text-white/75 transition hover:text-white">About Us</Link>
-            <Link to="/services" className="font-medium text-white/75 transition hover:text-white">Track Application</Link>
+          <div className="hidden items-center gap-9 md:flex">
+            <Link to="/" className="text-sm font-semibold text-[#0d514b]">Home</Link>
+            <Link to="/services" className="text-sm font-medium text-[#647572] transition hover:text-[#0d514b]">Services</Link>
+            <a href="#how-it-works" className="text-sm font-medium text-[#647572] transition hover:text-[#0d514b]">How it works</a>
+            <Link to="/support" className="text-sm font-medium text-[#647572] transition hover:text-[#0d514b]">Support</Link>
           </div>
-
-          <Link
-            to="/services"
-            className="hidden items-center gap-2 rounded-full bg-[#B8862B] px-5 py-3 font-semibold text-[#0A3733] shadow-lg shadow-black/20 transition hover:bg-[#D9A94A] sm:flex"
-          >
-            Start My Request
-            <ArrowRight size={18} />
+          <Link to="/services" className="inline-flex items-center gap-2 rounded-full bg-[#0d514b] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-[#0d514b]/15 transition hover:-translate-y-0.5 hover:bg-[#0a403b]">
+            Get started <ArrowRight size={16} />
           </Link>
         </div>
       </nav>
 
-      {/* ================= HERO ================= */}
-      <header className="relative overflow-hidden bg-[#0A3733] px-6 pb-24 pt-20">
-        <div
-          className="absolute inset-0 opacity-[0.16]"
-          style={{
-            backgroundImage:
-              "url('https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1600&q=60')",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0A3733] via-[#0A3733]/95 to-[#0A3733]" />
-        <div className="absolute -right-32 -top-32 h-[420px] w-[420px] rounded-full bg-[#B8862B]/10 blur-[130px]" />
+      <section className="home-hero overflow-hidden px-5 pb-16 pt-12 sm:px-8 sm:pb-20 sm:pt-16 lg:pb-24 lg:pt-20">
+        <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[0.96fr_1.04fr] lg:gap-16">
+          <div className="relative z-10">
+            <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-[#0d514b]/15 bg-white/75 px-4 py-2 text-xs font-bold uppercase tracking-[0.13em] text-[#0d514b] shadow-sm">
+              <Sparkles size={14} /> Property paperwork, made simple
+            </div>
+            <h1 className="home-display max-w-2xl text-[clamp(3.3rem,7vw,6.5rem)] font-extrabold leading-[0.98] tracking-[-0.075em] text-[#17312f]">
+              Your property work, <span className="text-[#0d7167]">in good hands.</span>
+            </h1>
+            <p className="mt-7 max-w-xl text-lg leading-8 text-[#647572] sm:text-xl">
+              Local experts help you handle registrations, records, and documents, with clear updates at every step.
+            </p>
+            <div className="mt-9 flex flex-wrap gap-3">
+              <Link to="/services" className="group inline-flex items-center gap-3 rounded-full bg-[#0d514b] px-7 py-4 font-bold text-white shadow-xl shadow-[#0d514b]/20 transition hover:-translate-y-1 hover:bg-[#0a403b]">
+                Explore services <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
+              </Link>
+              <Link to="/support" className="inline-flex items-center gap-2 rounded-full border border-[#17312f]/10 bg-white/70 px-6 py-4 font-bold text-[#17312f] transition hover:border-[#0d514b]/30 hover:bg-white">
+                Talk to our team
+              </Link>
+            </div>
+            <div className="mt-9 flex flex-wrap items-center gap-x-7 gap-y-3 text-sm font-medium text-[#647572]">
+              <span className="inline-flex items-center gap-2"><ShieldCheck size={17} className="text-[#0d7167]" /> Verified local professionals</span>
+              <span className="inline-flex items-center gap-2"><LockKeyhole size={16} className="text-[#0d7167]" /> Your documents stay protected</span>
+            </div>
+          </div>
 
-        <div className="relative z-10 mx-auto max-w-7xl">
-          <div className="grid items-center gap-14 lg:grid-cols-2">
-            {/* LEFT */}
-            <div>
-              <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-[#D9A94A]/40 bg-[#D9A94A]/10 px-4 py-2 text-sm font-semibold tracking-wide text-[#D9A94A]">
-                <Stamp size={16} />
-                THE EASIEST WAY TO HANDLE PROPERTY WORK
+          <div className="relative mx-auto w-full max-w-[650px] lg:ml-auto">
+            <div className="home-photo relative aspect-[1.04/1] overflow-hidden rounded-[2rem] bg-[#d9ded5] shadow-2xl shadow-[#193a34]/15 sm:rounded-[2.5rem]">
+              <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1400&q=85" alt="Bright modern home surrounded by greenery" className="absolute inset-0 h-full w-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#102d28]/45 via-transparent to-white/5" />
+              <div className="absolute left-6 top-6 inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/85 px-4 py-2 text-xs font-bold text-[#17312f] shadow-lg backdrop-blur-md sm:left-8 sm:top-8">
+                <MapPin size={14} className="text-[#0d7167]" /> Local guidance, wherever you are
               </div>
-
-              <h1 className="font-display mb-7 text-5xl font-semibold leading-[1.08] tracking-tight text-white sm:text-6xl lg:text-7xl">
-                Property Work?
-                <span className="block text-[#D9A94A]">Done From Home.</span>
-              </h1>
-
-              <p className="mb-9 max-w-2xl text-lg leading-8 text-white/65 sm:text-xl">
-                No more standing in long lines or visiting government offices
-                multiple times. A verified local agent handles your paperwork,
-                start to finish, while you track every step from your phone.
-              </p>
-
-              <div className="flex flex-col gap-4 sm:flex-row">
-                <Link
-                  to="/services"
-                  className="group inline-flex items-center justify-center gap-3 rounded-full bg-[#B8862B] px-8 py-4 text-lg font-semibold text-[#0A3733] shadow-xl shadow-black/25 transition-all hover:-translate-y-1 hover:bg-[#D9A94A]"
-                >
-                  Start My Request
-                  <ArrowRight size={21} className="transition-transform group-hover:translate-x-1" />
-                </Link>
-                <Link
-                  to="/services"
-                  className="inline-flex items-center justify-center gap-3 rounded-full border border-white/15 bg-white/5 px-8 py-4 text-lg font-semibold text-white backdrop-blur-md transition-all hover:bg-white/10"
-                >
-                  <Activity size={20} />
-                  See What We Do
-                </Link>
-              </div>
-
-              <div className="mt-7 flex items-center gap-2 text-sm text-white/55">
-                <ShieldCheck size={19} className="text-[#D9A94A]" />
-                Trusted by 5,000+ customers across India
+              <div className="absolute bottom-6 left-6 right-6 text-white sm:bottom-8 sm:left-8">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/75">Property support that feels personal</p>
+                <p className="home-display mt-2 max-w-sm text-2xl font-bold leading-tight sm:text-3xl">A smoother way to take care of home.</p>
               </div>
             </div>
 
-            {/* RIGHT — mock application certificate */}
-            <div className="relative">
-              <div className="relative rounded-3xl border border-white/10 bg-white shadow-2xl">
-                <div className="flex items-center justify-between border-b border-dashed border-[#E6DCC3] px-7 py-5">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-widest text-[#8A8272]">
-                      Application Status
-                    </p>
-                    <p className="font-mono mt-1 text-sm font-semibold text-[#0E4D46]">
-                      GPW-2026-04521
-                    </p>
-                  </div>
-                  <div className="flex h-16 w-16 -rotate-12 items-center justify-center rounded-full border-2 border-dashed border-[#B8862B] text-[#B8862B]">
-                    <div className="text-center leading-none">
-                      <CheckCircle2 size={18} className="mx-auto mb-0.5" />
-                      <span className="text-[9px] font-bold tracking-tight">VERIFIED</span>
-                    </div>
-                  </div>
+            <div className="home-status absolute -bottom-8 left-4 w-[min(88%,390px)] rounded-2xl border border-white/80 bg-white p-5 shadow-[0_24px_70px_-28px_rgba(17,51,45,0.4)] sm:-left-9 sm:bottom-10 sm:p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#81918d]">Application update</p>
+                  <p className="mt-1 text-sm font-bold text-[#17312f]">Property registration</p>
                 </div>
-
-                <div className="px-7 py-6">
-                  <p className="text-sm font-semibold text-[#1B2622]">
-                    Property Registration — Flat No. 402, Sunrise Residency
-                  </p>
-                  <p className="mt-1 text-xs text-[#8A8272]">Agent: R. Shetty · Filed 3 days ago</p>
-
-                  <div className="mt-6 space-y-4">
-                    {[
-                      { label: "Request Filed", done: true },
-                      { label: "Office Visit Completed", done: true },
-                      { label: "Registrar Approval", done: false, active: true },
-                      { label: "Certificate Delivered", done: false },
-                    ].map((step, i) => (
-                      <div key={i} className="flex items-center gap-3">
-                        <div
-                          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
-                            step.done
-                              ? "bg-[#0E4D46] text-white"
-                              : step.active
-                              ? "border-2 border-[#B8862B] text-[#B8862B]"
-                              : "border-2 border-[#E6DCC3] text-[#E6DCC3]"
-                          }`}
-                        >
-                          {step.done ? <CheckCircle2 size={14} /> : <div className="h-2 w-2 rounded-full bg-current" />}
-                        </div>
-                        <span className={`text-sm ${step.done ? "text-[#1B2622]" : step.active ? "font-semibold text-[#0E4D46]" : "text-[#8A8272]"}`}>
-                          {step.label}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between rounded-b-3xl bg-[#FAF6EC] px-7 py-4">
-                  <span className="text-xs text-[#8A8272]">Updated live — no repeat calls needed</span>
-                  <Search size={16} className="text-[#0E4D46]" />
-                </div>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e7f4ee] px-2.5 py-1 text-[10px] font-bold text-[#16705e]"><CheckCircle2 size={12} /> In progress</span>
               </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* ================= IMAGE STRIP ================= */}
-      <section className="bg-[#FAF6EC] px-6 py-14">
-        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-4 md:grid-cols-4">
-          {[
-            { url: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=600&q=60", label: "Residential Plots" },
-            { url: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=600&q=60", label: "Apartments" },
-            { url: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=600&q=60", label: "Ownership Transfer" },
-            { url: "https://images.unsplash.com/photo-1582407947304-fd86f028f716?auto=format&fit=crop&w=600&q=60", label: "Commercial Property" },
-          ].map((img, i) => (
-            <div key={i} className="group relative aspect-[4/3] overflow-hidden rounded-2xl">
-              <img
-                src={img.url}
-                alt={img.label}
-                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0" />
-              <span className="absolute bottom-3 left-3 text-sm font-semibold text-white">{img.label}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ================= SERVICES ================= */}
-      <section className="bg-white px-6 py-20" id="services">
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-14 text-center">
-            <p className="font-mono mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#B8862B]">
-              Our Services
-            </p>
-            <h2 className="font-display text-4xl font-semibold text-[#1B2622] sm:text-5xl">
-              We handle all types of property work
-            </h2>
-            <p className="mt-4 text-lg text-[#6B6656]">
-              Simple, reliable and professional property assistance.
-            </p>
-          </div>
-
-          <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
-            <ServiceCard icon={<FileText />} title="Property" subtitle="Registration" />
-            <ServiceCard icon={<BadgeCheck />} title="Encumbrance" subtitle="Certificate" />
-            <ServiceCard icon={<GitBranch />} title="Khata" subtitle="Transfer" />
-            <ServiceCard icon={<HomeIcon />} title="Mutation" subtitle="Services" />
-            <ServiceCard icon={<FileText />} title="NOC" subtitle="Services" />
-            <ServiceCard icon={<Gavel />} title="And Many" subtitle="More..." />
-          </div>
-        </div>
-      </section>
-
-      {/* ================= HOW IT WORKS ================= */}
-      <section className="bg-[#FAF6EC] px-6 py-24">
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-16 text-center">
-            <p className="font-mono mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#B8862B]">
-              How It Works
-            </p>
-            <h2 className="font-display text-4xl font-semibold text-[#1B2622] sm:text-5xl">
-              Four steps. Zero office visits.
-            </h2>
-          </div>
-
-          <div className="grid gap-8 md:grid-cols-4">
-            <StepCard number="01" icon={<ClipboardList size={24} />} title="Submit Request" text="Tell us what you need and upload your documents online in minutes." />
-            <StepCard number="02" icon={<UserCheck size={24} />} title="Agent Assigned" text="A verified local expert who knows your area takes on your case." />
-            <StepCard number="03" icon={<Gavel size={24} />} title="Office Visit & Filing" text="We stand in the queues, file the paperwork, and follow up for you." />
-            <StepCard number="04" icon={<PackageCheck size={24} />} title="Certificate Delivered" text="Get notified the moment it's ready — no repeated calls needed." />
-          </div>
-        </div>
-      </section>
-
-      {/* ================= WHY US ================= */}
-      <section className="bg-white px-6 py-24">
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-16 text-center">
-            <h2 className="font-display text-4xl font-semibold text-[#1B2622] sm:text-5xl">
-              Why Goutam Property Work?
-            </h2>
-            <p className="mt-4 text-lg text-[#6B6656]">
-              We remove the chaos from property management.
-            </p>
-          </div>
-
-          <div className="grid gap-8 md:grid-cols-3">
-            <ValueCard icon={<ClipboardCheck size={28} />} title="Professional Liaison" text="Our agents handle physical visits and application filing at government and municipal offices for you." />
-            <ValueCard icon={<Gavel size={28} />} title="Legal Verification" text="Get reliable property verification and local expert assistance before making important property decisions." />
-            <ValueCard icon={<Activity size={28} />} title="Live Status Updates" text="Know exactly where your application stands without repeatedly calling agents or visiting offices." />
-          </div>
-        </div>
-      </section>
-
-      {/* ================= FEATURES ================= */}
-      <section className="bg-[#0A3733] px-6 py-10">
-        <div className="mx-auto grid max-w-7xl gap-6 md:grid-cols-4">
-          <Feature icon={<Headphones />} title="Expert Support" text="Local experts at your service" />
-          <Feature icon={<Lock />} title="100% Secure" text="Your documents are safe with us" />
-          <Feature icon={<IndianRupee />} title="Transparent Pricing" text="No hidden charges" />
-          <Feature icon={<ShieldCheck />} title="Trusted Service" text="Reliable property assistance" />
-        </div>
-      </section>
-
-      {/* ================= PRICING (styled as a receipt) ================= */}
-      <section className="bg-[#0A3733] px-6 py-16">
-        <div className="mx-auto max-w-md">
-          <div
-            className="relative rounded-2xl bg-[#FAF6EC] px-8 py-8 shadow-2xl"
-            style={{
-              maskImage:
-                "radial-gradient(circle at 0 0, transparent 8px, black 8.5px), radial-gradient(circle at 100% 0, transparent 8px, black 8.5px)",
-            }}
-          >
-            <p className="font-mono text-center text-xs font-semibold uppercase tracking-[0.2em] text-[#8A8262]">
-              Fee Schedule
-            </p>
-            <h4 className="font-display mt-2 text-center text-2xl font-semibold text-[#1B2622]">
-              Transparent Pricing
-            </h4>
-
-            <div className="my-6 border-t border-dashed border-[#D8CFB3]" />
-
-            <div className="space-y-4 font-mono text-sm">
-              <div className="flex items-center justify-between text-[#1B2622]">
-                <span>Platform Fee</span>
-                <span className="font-semibold text-[#0E4D46]">₹499</span>
+              <div className="mt-5 flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0d7167] text-white"><Check size={14} /></span>
+                <span className="h-1 flex-1 rounded-full bg-[#0d7167]" />
+                <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#0d7167] bg-white"><span className="h-2 w-2 rounded-full bg-[#0d7167]" /></span>
+                <span className="h-1 flex-1 rounded-full bg-[#e5eae6]" />
+                <span className="h-7 w-7 rounded-full border-2 border-[#e5eae6] bg-white" />
               </div>
-              <div className="flex items-center justify-between text-[#1B2622]">
-                <span>Agent Commission</span>
-                <span className="font-semibold text-[#0E4D46]">3%</span>
-              </div>
+              <div className="mt-2 flex justify-between text-[10px] font-semibold text-[#73847f]"><span>Request received</span><span>Expert review</span><span>Completed</span></div>
             </div>
-
-            <div className="my-6 border-t border-dashed border-[#D8CFB3]" />
-
-            <p className="text-center text-xs text-[#8A8262]">
-              No hidden charges. Quality service shouldn't be expensive.
-            </p>
+            <div className="absolute -right-3 -top-5 hidden h-20 w-20 items-center justify-center rounded-3xl bg-[#d9a94a] text-[#17312f] shadow-xl sm:flex"><BadgeCheck size={34} strokeWidth={1.7} /></div>
           </div>
         </div>
       </section>
-    </div>
+
+      <section className="px-5 pb-10 pt-8 sm:px-8 sm:pb-14">
+        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-3 rounded-3xl border border-[#17312f]/[0.07] bg-white p-5 shadow-[0_12px_40px_-30px_rgba(17,51,45,0.3)] sm:grid-cols-4 sm:p-7">
+          <Metric value="5,000+" label="customers supported" />
+          <Metric value="120+" label="local professionals" />
+          <Metric value="4.9/5" label="customer rating" />
+          <Metric value="One team" label="from request to update" />
+        </div>
+      </section>
+
+      <section className="px-5 py-20 sm:px-8 sm:py-24" id="services">
+        <div className="mx-auto max-w-7xl">
+          <SectionHeading eyebrow="What we can help with" title="Property paperwork, without the runaround." text="Get practical help with the details, documents, and local steps that matter." />
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {services.map((service) => (
+              <Link key={service.title} to="/services" className="home-service group rounded-3xl border border-[#17312f]/[0.08] bg-white p-7 transition duration-300 hover:-translate-y-1.5 hover:border-[#0d7167]/25 hover:shadow-xl hover:shadow-[#17312f]/[0.07]">
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e9f2ee] text-[#0d7167] transition group-hover:bg-[#0d514b] group-hover:text-white">{service.icon}</span>
+                <h3 className="home-display mt-6 text-lg font-bold tracking-tight text-[#17312f]">{service.title}</h3>
+                <p className="mt-2 min-h-[3rem] text-sm leading-6 text-[#71817d]">{service.text}</p>
+                <span className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-[#0d7167]">Learn more <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" /></span>
+              </Link>
+            ))}
+          </div>
+          <div className="mt-8 text-center"><Link to="/services" className="inline-flex items-center gap-2 rounded-full border border-[#17312f]/10 px-6 py-3 text-sm font-bold text-[#17312f] transition hover:bg-white">See all services <ArrowDownRight size={16} /></Link></div>
+        </div>
+      </section>
+
+      <section className="home-process px-5 py-20 sm:px-8 sm:py-24" id="how-it-works">
+        <div className="mx-auto max-w-7xl">
+          <SectionHeading eyebrow="A clear, simple process" title="Three steps. A little more peace of mind." text="We keep you informed, so you always know what happens next." />
+          <div className="mt-12 grid gap-4 md:grid-cols-3">
+            {steps.map((step) => <article key={step.number} className="relative rounded-3xl border border-white bg-white/75 p-7 sm:p-9"><span className="home-display text-5xl font-extrabold tracking-[-0.08em] text-[#dce9e3]">{step.number}</span><h3 className="home-display mt-5 text-xl font-bold text-[#17312f]">{step.title}</h3><p className="mt-3 leading-7 text-[#71817d]">{step.text}</p></article>)}
+          </div>
+        </div>
+      </section>
+
+      <section className="px-5 py-20 sm:px-8 sm:py-24">
+        <div className="home-trust mx-auto grid max-w-7xl overflow-hidden rounded-[2rem] bg-[#0d514b] text-white shadow-2xl shadow-[#0d514b]/15 lg:grid-cols-[0.85fr_1.15fr]">
+          <div className="p-8 sm:p-12 lg:p-14">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#b6d3c7]">Why ESTATE-SYNC</p>
+            <h2 className="home-display mt-5 text-4xl font-extrabold leading-tight tracking-[-0.06em] sm:text-5xl">Good people. Clear progress. Less stress.</h2>
+            <p className="mt-5 max-w-md leading-7 text-white/70">Property matters can feel complicated. We bring experienced local support and straightforward updates to every step.</p>
+            <Link to="/services" className="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-bold text-[#0d514b] transition hover:bg-[#e8f2ec]">Find your service <ArrowRight size={16} /></Link>
+          </div>
+          <div className="grid gap-px bg-white/10 sm:grid-cols-2">
+            <TrustItem icon={<UserRoundCheck />} title="Local experts" text="People who know the process in your area." />
+            <TrustItem icon={<ClipboardCheck />} title="Clear updates" text="Know where your request stands." />
+            <TrustItem icon={<ShieldCheck />} title="Careful handling" text="Your documents treated with care." />
+            <TrustItem icon={<Headphones />} title="Real support" text="A helpful team when you need us." />
+          </div>
+        </div>
+      </section>
+
+      <section className="px-5 pb-20 sm:px-8 sm:pb-24">
+        <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 rounded-3xl border border-[#17312f]/[0.08] bg-white p-8 sm:p-12 md:flex-row md:items-center">
+          <div><p className="text-xs font-bold uppercase tracking-[0.18em] text-[#0d7167]">Straightforward fees</p><h2 className="home-display mt-3 text-3xl font-extrabold tracking-[-0.05em] text-[#17312f] sm:text-4xl">Know what to expect.</h2><p className="mt-3 max-w-xl leading-7 text-[#71817d]">Platform fee starts at ₹499. Your service expert will explain any service costs before work begins.</p></div>
+          <Link to="/services" className="shrink-0 inline-flex items-center gap-2 rounded-full bg-[#0d514b] px-6 py-4 font-bold text-white transition hover:bg-[#0a403b]">Browse services <ArrowRight size={17} /></Link>
+        </div>
+      </section>
+
+      <footer className="border-t border-[#17312f]/[0.08] px-5 py-8 sm:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+          <Link to="/" className="home-display font-extrabold tracking-tight text-[#17312f]">ESTATE-SYNC</Link>
+          <p className="text-sm text-[#71817d]">Property support, made a little simpler.</p>
+          <Link to="/support" className="text-sm font-bold text-[#0d7167] hover:text-[#0a403b]">Contact support <ArrowRight size={14} className="ml-1 inline" /></Link>
+        </div>
+      </footer>
+    </main>
   );
 }
 
-/* ================= SERVICE CARD ================= */
-function ServiceCard({ icon, title, subtitle }) {
-  return (
-    <Link
-      to="/services"
-      className="group relative rounded-2xl border border-[#EFE9D8] bg-white p-6 text-center shadow-sm transition-all hover:-translate-y-2 hover:border-[#D9A94A]/40 hover:shadow-xl"
-    >
-      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0E4D46]/8 text-[#0E4D46] transition-all group-hover:bg-[#0E4D46] group-hover:text-white">
-        {icon}
-      </div>
-      <h3 className="font-semibold text-[#1B2622]">{title}</h3>
-      <p className="text-sm text-[#8A8262]">{subtitle}</p>
-    </Link>
-  );
+function SectionHeading({ eyebrow, title, text }) {
+  return <div className="mx-auto max-w-2xl text-center"><p className="text-xs font-extrabold uppercase tracking-[0.2em] text-[#0d7167]">{eyebrow}</p><h2 className="home-display mt-4 text-3xl font-extrabold leading-tight tracking-[-0.06em] text-[#17312f] sm:text-5xl">{title}</h2><p className="mt-4 leading-7 text-[#71817d] sm:text-lg">{text}</p></div>;
 }
 
-/* ================= STEP CARD ================= */
-function StepCard({ number, icon, title, text }) {
-  return (
-    <div className="relative rounded-2xl border border-[#EFE9D8] bg-white p-7">
-      <span className="font-mono absolute right-5 top-5 text-2xl font-semibold text-[#EFE4C6]">
-        {number}
-      </span>
-      <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-[#0E4D46] text-white">
-        {icon}
-      </div>
-      <h3 className="mb-2 text-lg font-bold text-[#1B2622]">{title}</h3>
-      <p className="text-sm leading-6 text-[#6B6656]">{text}</p>
-    </div>
-  );
+function Metric({ value, label }) {
+  return <div className="px-2 py-2 text-center sm:px-4"><p className="home-display text-2xl font-extrabold tracking-[-0.05em] text-[#17312f] sm:text-3xl">{value}</p><p className="mt-1 text-xs font-medium text-[#82908c] sm:text-sm">{label}</p></div>;
 }
 
-/* ================= VALUE CARD ================= */
-function ValueCard({ icon, title, text }) {
-  return (
-    <div className="group rounded-[2rem] border border-[#EFE9D8] bg-[#FAF6EC] p-10 transition-all hover:-translate-y-2 hover:shadow-2xl">
-      <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0E4D46]/8 text-[#0E4D46] transition-all group-hover:bg-[#0E4D46] group-hover:text-white">
-        {icon}
-      </div>
-      <h3 className="mb-3 text-xl font-bold text-[#1B2622]">{title}</h3>
-      <p className="leading-relaxed text-[#6B6656]">{text}</p>
-    </div>
-  );
-}
-
-/* ================= FEATURE ================= */
-function Feature({ icon, title, text }) {
-  return (
-    <div className="flex items-center gap-4 md:border-r md:border-white/10 md:pr-6">
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#D9A94A]/15 text-[#D9A94A]">
-        {icon}
-      </div>
-      <div>
-        <h3 className="font-bold text-white">{title}</h3>
-        <p className="text-sm text-white/55">{text}</p>
-      </div>
-    </div>
-  );
+function TrustItem({ icon, title, text }) {
+  return <div className="flex gap-4 bg-[#0d514b] p-7 sm:p-9"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/10 text-[#d7b775]">{icon}</span><div><h3 className="font-bold">{title}</h3><p className="mt-2 text-sm leading-6 text-white/65">{text}</p></div></div>;
 }

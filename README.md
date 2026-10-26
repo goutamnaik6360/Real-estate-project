@@ -1,16 +1,18 @@
-# React + Vite
+# Estate-Sync
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Estate-Sync is a React web app using Firebase Authentication and Cloud Firestore. Agent sign-up stores profile details only; document uploads are turned off so this demo does not need Firebase Storage or a billing account.
 
-Currently, two official plugins are available:
+## Connect a Firebase project
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+1. Create a Firebase project and register a **Web app** in the Firebase Console.
+2. In **Authentication → Sign-in method**, enable **Email/Password**.
+3. Create a **Cloud Firestore** database.
+4. Copy the Web app configuration into a new `.env.local` file in this folder, using `.env.example` as the template.
+5. Publish `firestore.rules` from the Firebase Console, or deploy it with the Firebase CLI. `firebase.json` points to the rules file.
+6. To use the admin dashboard, create a user account first, then set that user's `profiles/{uid}` document field `role` to `admin` in Firestore. Public registration cannot create admin accounts.
 
-## React Compiler
+Keep `.env.local` private and never add service-account credentials to this browser app. The Firebase web app configuration is intended for client apps; Firestore rules protect the data.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Run locally
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Install dependencies with `npm install`, then start the app using `npm run dev`. Without Firebase settings in `.env.local`, public pages load, but sign-in, registration, and data features show a configuration error.

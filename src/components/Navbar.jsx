@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { pb } from "../lib/pb";
+import { backend, subscribeToAuth } from "../lib/firebaseBackend";
 import { 
   Building2, 
   Menu, 
@@ -15,6 +15,8 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
+  const [user, setUser] = useState(backend.authStore.model);
+  useEffect(() => subscribeToAuth(setUser), []);
 
   // HIDE NAVBAR ON LANDING PAGE
   // The Landing page has its own custom transparent navbar, so we hide this global one.
@@ -22,8 +24,7 @@ export default function Navbar() {
     return null;
   }
 
-  const isAuth = pb.authStore.isValid;
-  const user = pb.authStore.model;
+  const isAuth = Boolean(user);
 
   // Determine which dashboard to send the user to
   const getDashboardLink = () => {
@@ -34,7 +35,7 @@ export default function Navbar() {
   };
 
   const handleLogout = () => {
-    pb.authStore.clear(); // Clears the local PocketBase session
+    backend.authStore.clear(); // Signs out from Firebase
     setIsOpen(false);
     navigate("/login");
   };
@@ -51,7 +52,7 @@ export default function Navbar() {
             <div className="bg-blue-50 p-2 rounded-xl group-hover:bg-accent transition-colors">
               <Building2 className="text-accent group-hover:text-white transition-colors w-6 h-6" />
             </div>
-            <span className="text-2xl font-extrabold text-brand tracking-tight">EstateSync.</span>
+            <span className="text-2xl font-extrabold text-brand tracking-tight">ESTATE-SYNC.</span>
           </Link>
 
           {/* DESKTOP MENU */}

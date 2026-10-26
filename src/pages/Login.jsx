@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { pb } from "../lib/pb";
+import { useLocation, useNavigate } from "react-router-dom";
+import { backend } from "../lib/firebaseBackend";
 import { User, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
 
 // Neumorphic "soft UI" palette — tweak these two values to re-theme everything
@@ -18,8 +18,9 @@ const pressed = { boxShadow: `inset 4px 4px 8px ${SHADOW_DARK}, inset -4px -4px 
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(location.state?.email || "");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(false);
@@ -38,15 +39,8 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const authData = await pb.collection("users").authWithPassword(email, password);
+      const authData = await backend.collection("users").authWithPassword(email, password);
       const user = authData.record;
-
-      if (user.role === "agent" && user.status !== "approved") {
-        pb.authStore.clear();
-        setError("Your agent account is still pending Admin approval.");
-        setLoading(false);
-        return;
-      }
 
       if (remember) {
         localStorage.setItem("estateSyncRemember", "true");
@@ -63,10 +57,10 @@ export default function Login() {
       }
     } catch (err) {
       console.error("Login error:", err);
-      if (err?.status === 400) {
+      if (["auth/invalid-credential", "auth/user-not-found", "auth/wrong-password"].includes(err?.code)) {
         setError("Invalid email or password.");
       } else {
-        setError("Unable to login. Please try again.");
+        setError(err?.message || "Unable to login. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -92,8 +86,14 @@ export default function Login() {
               Login
             </h1>
             <p className="text-xs mb-5" style={{ color: "#9098a9" }}>
-              Sign in to your EstateSync account
+              Sign in to your ESTATE-SYNC account
             </p>
+
+            {location.state?.registrationComplete && (
+              <div className="mb-4 px-3 py-2 rounded-2xl text-left text-[11px] font-medium" style={{ ...inset, color: "#287a54" }} role="status">
+                Account created. Sign in with your email and password.
+              </div>
+            )}
 
             {error && (
               <div
@@ -199,7 +199,6 @@ export default function Login() {
                 {loading ? "SIGNING IN..." : "SIGN IN"}
               </button>
             </form>
-
             <p className="mt-4 text-[11px]" style={{ color: "#9098a9" }}>
               Don't have an account?{" "}
               <button

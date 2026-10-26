@@ -13,8 +13,6 @@ import ServiceForm from "./pages/ServiceForm";
 // Authentication Flow
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import PhoneVerification from "./pages/PhoneVerification";
-import AgentOnboarding from "./pages/AgentOnboarding";
 
 // Role-Based Dashboards
 import UserDashboard from "./pages/UserDashboard";
@@ -42,8 +40,6 @@ export default function App() {
         {/* Auth Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/verify-phone" element={<PhoneVerification />} />
-        <Route path="/agent-onboarding" element={<AgentOnboarding />} />
         
         {/* Role-Specific Dashboard Routes */}
         <Route path="/dashboard/user" element={<UserDashboard />} />

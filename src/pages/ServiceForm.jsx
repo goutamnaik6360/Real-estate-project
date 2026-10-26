@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { pb } from "../lib/pb";
+import { backend } from "../lib/firebaseBackend";
 import { ArrowLeft, User, Phone, MapPin, UploadCloud, AlertCircle, FileText } from "lucide-react";
 
 export default function ServiceForm() {
@@ -23,7 +23,7 @@ export default function ServiceForm() {
     setError("");
 
     // 🔒 Security Check
-    if (!pb.authStore.isValid) {
+    if (!backend.authStore.isValid) {
       alert("Please login first to submit an application.");
       navigate("/login");
       return;
@@ -32,11 +32,11 @@ export default function ServiceForm() {
     try {
       setLoading(true);
 
-      // 🔥 Save to PocketBase Database
-      // Note: If you want to handle real file uploads later, PocketBase uses FormData.
+      // 🔥 Save to Firebase Database
+      // Note: If you want to handle real file uploads later, Firebase uses FormData.
       // For now, we are saving the text fields and pushing it to the Admin.
-      await pb.collection("requests").create({
-        user: pb.authStore.model.id,
+      await backend.collection("requests").create({
+        user: backend.authStore.model.id,
         serviceName: serviceName,
         applicantName: form.name,
         location: form.location,

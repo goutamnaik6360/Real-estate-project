@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { pb } from "../lib/pb";
+import { backend } from "../lib/firebaseBackend";
 import { Bell, ArrowLeft, Check, Info, AlertTriangle, CheckCircle2 } from "lucide-react";
 
 export default function Notifications() {
@@ -10,16 +10,16 @@ export default function Notifications() {
 
   useEffect(() => {
     // 🔒 Security Check
-    if (!pb.authStore.isValid) {
+    if (!backend.authStore.isValid) {
       navigate("/login");
       return;
     }
 
     const fetchNotifications = async () => {
       try {
-        const userId = pb.authStore.model.id;
+        const userId = backend.authStore.model.id;
         // Fetch only notifications belonging to this specific user
-        const records = await pb.collection("notifications").getFullList({
+        const records = await backend.collection("notifications").getFullList({
           filter: `user = "${userId}"`,
           sort: "-created", // Newest first
         });
@@ -34,18 +34,18 @@ export default function Notifications() {
     fetchNotifications();
 
     // 🔥 Real-time subscription to get notified instantly
-    pb.collection("notifications").subscribe("*", function (e) {
+    backend.collection("notifications").subscribe("*", function (e) {
       if (e.action === "create" || e.action === "update") {
         fetchNotifications();
       }
     });
 
-    return () => pb.collection("notifications").unsubscribe("*");
+    return () => backend.collection("notifications").unsubscribe("*");
   }, [navigate]);
 
   const markAsRead = async (id) => {
     try {
-      await pb.collection("notifications").update(id, { is_read: true });
+      await backend.collection("notifications").update(id, { is_read: true });
       // Update local state immediately for snappy UI
       setNotifications(prev => 
         prev.map(notif => notif.id === id ? { ...notif, is_read: true } : notif)
@@ -58,7 +58,7 @@ export default function Notifications() {
   const markAllAsRead = async () => {
     try {
       const unread = notifications.filter(n => !n.is_read);
-      await Promise.all(unread.map(n => pb.collection("notifications").update(n.id, { is_read: true })));
+      await Promise.all(unread.map(n => backend.collection("notifications").update(n.id, { is_read: true })));
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
     } catch (err) {
       console.error("Failed to mark all as read", err);
